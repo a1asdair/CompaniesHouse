@@ -13,96 +13,113 @@ from urllib.error import HTTPError
 
 def getlistofdirectors(companynumber):
 
+        # Ok, things have got a bit confused here. The function suggests that it will return a list of directors. 
+        # However here you are declaring global variables (ie ones that will apply outside of the function)
+        # Then below an individual director's details are stored in these variables (and not a list)
+        # And then finally these variables are returned by the function, but only for one director (the final one)
+        # So there are a few issues. You need functionlaity to manage multiple pages of results (which I have started to add in below)
+        # and you also need to decide whether this functions job is to give you one director, or a list of all directors
+        # If you look at my original script:
+        # https://github.com/a1asdair/companieshouseapi/blob/master/lookuptrustees-oscrch.py
+        # You will see that it implements (crude) page tracking for multiple pages of results, and avoids
+        # the issue above by writing each directors details to a file as it finds them (rather than returning the details out of a function).
+        
         global name, role, appointon, resignedon, dob, country, nationality, occupation
 
         searchnumber = companynumber[1:]
 
         print(searchnumber) 
-    # Make the Companies House request  
-        try:    
-
-            response = search_client.officers(searchnumber)
- 
-            directorslist = response.json()["items"]
-
-            for person in directorslist:
-
-                try:
-                    name = person["name"]
-
-                except: 
-
-                    name = "."
-
-                try: 
-
-                    role = person["officer_role"]
-
-                except: 
-
-                    role = "."
-
-                try: 
-
-                    appointon = person["appointed_on"]
-
-                except: 
-
-                    appoint_on = "."
         
-                try: 
+        numItems = 1    # This is to track how many directors there are. We set it to 1 as we don't know yet how many there will be
+        pIndex = 0      # This tracks the number of directors that we have downloaded. We start it at 0.
+        
+        while pIndex < numItems:        # This while loop keeps us downloading until we have got all the company directors
+            # Make the Companies House request  
+                try:    
 
-                    resignedon = person["resigned_on"]
+                    response = search_client.officers(searchnumber, start_index=pIndex) # We use start_index in the request to say where in the results we should start
+                    numItems = response.json()['total_results']         # This is where we find out the total number of directors in the search
+                    pIndex += 35                                        # 35 is the page size i.e. the number of directiors returned in a single request - or at least it was when I wrote my orginal code. Worth checking.
+                    directorslist = response.json()["items"]
 
-                except: 
+                    for person in directorslist:
 
-                    resignedon = "."
+                        try:
+                            name = person["name"]
 
-                try: 
+                        except: 
 
-                    dob = person["date_of_birth"]
+                            name = "."
 
-                except: 
+                        try: 
 
-                    dob = "."
+                            role = person["officer_role"]
 
-                try: 
+                        except: 
 
-                    country = person["country_of_residence"]
+                            role = "."
 
-                except: 
+                        try: 
 
-                    country = "."
+                            appointon = person["appointed_on"]
 
-                try: 
+                        except: 
 
-                    nationality = person["nationality"]
+                            appoint_on = "."
 
-                except: 
+                        try: 
 
-                    nationality = "." 
+                            resignedon = person["resigned_on"]
 
-                try: 
+                        except: 
 
-                    occupation = person["occupation"]
+                            resignedon = "."
 
-                except: 
+                        try: 
 
-                    occupation = "."
+                            dob = person["date_of_birth"]
 
-        except:
-            print("error")
+                        except: 
 
-            name, role, appointon, resignedon, dob, country, nationality, occupation = "" , "", "", "", "", "", "", ""  
+                            dob = "."
 
-#        else:
- #           sleep(30)
+                        try: 
 
-  #          print (".", end='')
+                            country = person["country_of_residence"]
 
-   #         name, role, appointon, resignedon, dob, country, nationality, occupation = getlistofdirectors(companynumber)    
+                        except: 
 
-    #        print("")
+                            country = "."
+
+                        try: 
+
+                            nationality = person["nationality"]
+
+                        except: 
+
+                            nationality = "." 
+
+                        try: 
+
+                            occupation = person["occupation"]
+
+                        except: 
+
+                            occupation = "."
+
+                except:
+                    print("error")
+
+                    name, role, appointon, resignedon, dob, country, nationality, occupation = "" , "", "", "", "", "", "", ""  
+
+        #        else:
+         #           sleep(30)
+
+          #          print (".", end='')
+
+           #         name, role, appointon, resignedon, dob, country, nationality, occupation = getlistofdirectors(companynumber)    
+
+            #        print("")
 
         return name, role, appointon, resignedon, dob, country, nationality, occupation 
 
